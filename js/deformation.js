@@ -108,28 +108,27 @@ ImgWarper.AffineDeformation.prototype.pointMover = function (point){
 
   for (var i = 0; i < this.n; ++i) {
     var t = this.fromPoints[i].subtract(point);
-    this.w[i] = Math.pow(t.x * t.x + t.y * t.y , -this.alpha);
+    this.w[i] = Math.pow(t.x * t.x + t.y * t.y, -this.alpha);
   }
 
-  var pAverage = ImgWarper.Point.average_pd(this.fromPoints, this.w);
-  var qAverage = ImgWarper.Point.average_pd(this.toPoints, this.w);
-  //********************
+  var pAverage = ImgWarper.Point.weightedAverage(this.fromPoints, this.w);
+  var qAverage = ImgWarper.Point.weightedAverage(this.toPoints, this.w);
+
   for (var i = 0; i < this.n; ++i) {
     this.pRelative[i] = this.fromPoints[i].subtract(pAverage);
     this.qRelative[i] = this.toPoints[i].subtract(qAverage);
-  } 
+  }
 
-  var B = new ImgWarper.Matrix22(0,0,0,0);
+  var B = new ImgWarper.Matrix22(0, 0, 0, 0);
 
   for (var i = 0; i < this.n; ++i) {
-    B = B.add_m(
-        this.pRelative[i].ThisTransposeMultiplyOtherMultiplyThis(this.w[i]));
+    B.addM(this.pRelative[i].wXtX(this.w[i]));
   }
 
   B = B.inverse();
   for (var j = 0; j < this.n; ++j) {
     this.A[j] = point.subtract(pAverage).multiply(B)
-      .multiplyOtherTranspose(this.pRelative[j]) * this.w[j];
+      .dotP(this.pRelative[j]) * this.w[j];
   }
 
   var r = qAverage; //r is an point 
